@@ -1,52 +1,10 @@
-# Storage Class for PostgreSQL 9.6
-
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: postgres-9.6-storage-class
-  labels:
-    app: study
-provisioner: kubernetes.io/no-provisioner
-reclaimPolicy: Retain
-volumeBindingMode: WaitForFirstConsumer
-
----
-
-# Persistence Volume for PostgreSQL 9.6
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: postgres-9.6-pv
-  labels:
-    app: study
-spec:
-  capacity:
-    storage: 2Gi
-  volumeMode: Filesystem
-  accessModes:
-  - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: postgres-9.6-storage-class
-  local:
-    path: "C:\\Data\\Postgres\\9.6"
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - docker-desktop
-
----
-
 # Persistence Volume Claim for PostgreSQL 9.6
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-9.6-pvc
   labels:
-    app: study
+    app: postgres-9.6
 spec:
   accessModes:
     - ReadWriteOnce
@@ -63,17 +21,16 @@ kind: Deployment
 metadata:
   name: postgres-9.6-deployment
   labels:
-    app: study
+    app: postgres-9.6
 spec:
   selector:
     matchLabels:
-      app: study
+      app: postgres-9.6
 
   template:
     metadata:
       labels:
-        app: study
-        tier: postgreSQL
+        app: postgres-9.6
     spec:
       containers:
         - image: postgres:9.6.18-alpine
@@ -87,23 +44,30 @@ spec:
             - containerPort: 5432
               name: postgres-9-6
           volumeMounts:
-            - name: postgres-9-6
+            - name: postgres-9-6-pod-volume
               mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+            requests:
+              cpu: "0.5"
+              memory: "256Mi"
       volumes:
-        - name: postgres-9-6
+        - name: postgres-9-6-pod-volume
           persistentVolumeClaim:
             claimName: postgres-9.6-pvc
 
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: postgres-9-6-service
-#   labels:
-#     app: study
-# spec:
-#   ports:
-#     - port: 5432
-#   selector:
-#     app: study
-#     tier: postgres-9-6
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-9-6-service
+  labels:
+    app: postgres-9.6
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432 
+  selector:
+    app: postgres-9.6
