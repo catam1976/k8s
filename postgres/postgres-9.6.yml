@@ -39,7 +39,7 @@ spec:
             - name: POSTGRES_USER
               value: postgres
             - name: POSTGRES_PASSWORD
-              value: abc123
+              value: "12345678"
           ports:
             - containerPort: 5432
               name: postgres-9-6
@@ -66,8 +66,9 @@ metadata:
   labels:
     app: postgres-9.6
 spec:
+  type: NodePort
   ports:
     - port: 5432
-      targetPort: 5432 
+      nodePort: 31000
   selector:
     app: postgres-9.6
